@@ -59,7 +59,14 @@ public class TrieNode {
      * data. Return null if no such child node is present in the trie.
      */
     public TrieNode getChild(char c) {
-    	return children.get(c);
+    	if (children.get(c) != null)
+    	    return children.get(c);
+    	else
+    	    return null;
+    }
+
+    public HashMap<Character, TrieNode> getChildren() {
+        return children;
     }
 
     /* Returns whether this node represents the end of a complete word. */
@@ -70,5 +77,11 @@ public class TrieNode {
     /* Set whether this node is the end of a complete word.*/
     public void setTerminates(boolean t) {
     	terminates = t;
+    }
+
+    public boolean childExist(char c){
+        if (children.get(c) == null)
+            return false;
+        return true;
     }
 }

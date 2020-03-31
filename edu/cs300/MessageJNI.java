@@ -15,9 +15,11 @@ public class MessageJNI {
     }
 
     public static void main(String[] args) {
-        //System.out.println(new MessageJNI().readStringMsg("anderson",65));
-        System.out.println(new MessageJNI().readPrefixRequestMsg());
+        //System.out.println(new MessageJNI().readStringMsg());
+        SearchRequest messages = (new MessageJNI().readPrefixRequestMsg());
+        System.out.println(messages.toString());
         new MessageJNI().writeLongestWordResponseMsg( 1, "and", 1, "Jane Austen","andulousa", 6, 1);
+        return;
     }
 
     // Declare a native method sayHello() that receives no arguments and returns void
