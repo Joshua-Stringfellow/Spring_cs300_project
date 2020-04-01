@@ -10,6 +10,8 @@ public class PassageProcessor {
   public static void main(String[] args){
    while (true) {
       SearchRequest req = MessageJNI.readPrefixRequestMsg();
+      if (req.requestID == 0)
+          break;
       String prefix = req.prefix;
       System.out.println(prefix);
       ArrayList<String> passages = new ArrayList<String>();

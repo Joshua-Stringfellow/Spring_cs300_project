@@ -114,7 +114,19 @@ int main(int argc, char**argv)
 
 
    }
-
+        sbuf.mtype = 1;
+        strlcpy(sbuf.prefix,"", WORD_LENGTH);
+        sbuf.id=0;
+           // Send a message.
+           if((msgsnd(msqid, &sbuf, buf_length, IPC_NOWAIT)) < 0) {
+               int errnum = errno;
+               fprintf(stderr,"%d, %ld, %s, %d\n", msqid, sbuf.mtype, sbuf.prefix, (int)buf_length);
+               perror("(msgsnd)");
+               fprintf(stderr, "Error sending msg: %s\n", strerror( errnum ));
+               exit(1);
+           }
+           else
+               fprintf(stderr,"Message(%d): \"%s\" Sent (%d bytes)\n\n", sbuf.id, sbuf.prefix,(int)buf_length);
     exit(0);
 }
 

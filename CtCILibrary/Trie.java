@@ -92,9 +92,6 @@ public class Trie
         }
         for(Object c : ch){
             displayTrie(root.getChild((char) c), s + c, 0);
-//
-
-
         }
     }
 }
