@@ -2,6 +2,7 @@ package CtCILibrary;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 
 /* Implements a trie. We store the input list of words in tries so
@@ -46,7 +47,8 @@ public class Trie
                 return false;	 
             }
         }
-        getWord(lastNode, prefix);
+        //getWord(lastNode, prefix, prefix.length());
+        displayTrie(lastNode,prefix,0);
         return !exact || lastNode.terminates();
     }
     
@@ -63,59 +65,36 @@ public class Trie
         return longestWord;
     }
 
-//    public void display(TrieNode node, ArrayList<Character> result, int level)
-//    {
-//
-//        // If node is leaf node, it indicates end
-//        // of string, so a null character is added
-//        // and string is displayed
-//        if (!node.terminates())
-//        {
-//            result.add(level, '\0');
-//            StringBuilder builder = new StringBuilder(result.size());
-//            for(Character ch: result)
-//            {
-//                builder.append(ch);
-//            }
-//            String r = builder.toString();
-//            if (r.length() >= longestWord.length())
-//                longestWord=r;
-//        }
-//
-//        int i;
-//        for (i = 0; i < 26; i++)
-//        {
-//            // if NON NULL child is found
-//            // add parent key to str and
-//            // call the display function recursively
-//            // for child node
-//            if (node.getChild())
-//            {
-//                result.add(level, node.getChar());
-//                display(node.getChild((char)(i + (int)'a')), result, level + 1);
-//            }
-//        }
-//    }
-    public void getWord(TrieNode node, String result){
+    void displayTrie(TrieNode root, String s, int children){
         //System.out.println(node.getChar());
-
-        if (node==null)
+        if (root==null) {
             return;
-
-        if (node.terminates()){
-            if (result.length() >= longestWord.length())
-                longestWord = result;
-            //System.out.println(result);
         }
+        TrieNode current = root;
 
-        for(int i=0; i<26; i++){
-            char c = (char)(i + (int)'a');
-            if (node.childExist(c)){
-                node = node.getChild(c);
-                getWord(node, result + c);
+        if (root.terminates()) {
+            //System.out.println(s);
+            root = this.root;
+            if (s.length() >= longestWord.length()) {
+                longestWord =s;
             }
+            //s = s.substring(0, s.length() - 1);
+        }
+        HashMap<Character, TrieNode> nodes = current.getChildren();
+        if (nodes.size() == 0)
+            return;
+        ArrayList ch  = new ArrayList();
+        for(int i=0; i<26; i++) {
+            char c = (char) (i + (int) 'a');
+            if (nodes.containsKey(c)){
+                ch.add(c);
+            }
+        }
+        for(Object c : ch){
+            displayTrie(root.getChild((char) c), s + c, 0);
+//
+
 
         }
-
     }
 }

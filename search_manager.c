@@ -37,7 +37,29 @@ strlcpy(char       *dst,        /* O - Destination string */
 
     return (srclen);
 }
-
+response_buf getResponse(int msqid){
+// msgrcv to receive message
+response_buf rbuf;
+        int ret;
+        do {
+          //printf("receiving message \n");
+          ret = msgrcv(msqid, &rbuf, sizeof(response_buf), 2, 0);//receive type 2 message
+          //printf("stuck here\n");
+          int errnum = errno;
+          if (ret < 0 && errno !=EINTR){
+            fprintf(stderr, "Value of errno: %d\n", errno);
+            perror("Error printed by perror");
+            fprintf(stderr, "Error receiving msg: %s\n", strerror( errnum ));
+          }
+        } while ((ret < 0 ) && (errno == 4));
+        //fprintf(stderr,"msgrcv error return code --%d:$d--",ret,errno);
+        //printf("loop exited\n");
+        if (rbuf.present == 1)
+            fprintf(stderr,"%ld, %d of %d, %s, size=%d\n", rbuf.mtype, rbuf.index,rbuf.count,rbuf.longest_word, ret);
+        else
+            fprintf(stderr,"%ld, %d of %d, not found, size=%d\n", rbuf.mtype, rbuf.index,rbuf.count, ret);
+        return rbuf;
+}
 int main(int argc, char**argv)
 {
     int msqid =0;
@@ -68,7 +90,7 @@ int main(int argc, char**argv)
         // We'll send message type 1
         sbuf.mtype = 1;
         strlcpy(sbuf.prefix,argv[i],WORD_LENGTH);
-        sbuf.id=0;
+        sbuf.id=i;
         buf_length = strlen(sbuf.prefix) + sizeof(int)+1;//struct size without long int type
 
         // Send a message.
@@ -80,31 +102,17 @@ int main(int argc, char**argv)
             exit(1);
         }
         else
-            fprintf(stderr,"Message(%d): \"%s\" Sent (%d bytes)\n", sbuf.id, sbuf.prefix,(int)buf_length);
+            fprintf(stderr,"Message(%d): \"%s\" Sent (%d bytes)\n\n", sbuf.id, sbuf.prefix,(int)buf_length);
 
        // printf("Value of msqid= %d\n", msqid);
+        fprintf(stderr, "Report \"%s\"\n", argv[i]);
+        response_buf rbuf = getResponse(msqid);
 
-        response_buf rbuf;
+        while (rbuf.index < rbuf.count){
+            rbuf = getResponse(msqid);
+        }
 
-     // msgrcv to receive message
-        int ret;
-        do {
-          //printf("receiving message \n");
-          ret = msgrcv(msqid, &rbuf, sizeof(response_buf), 2, 0);//receive type 2 message
-          //printf("stuck here\n");
-          int errnum = errno;
-          if (ret < 0 && errno !=EINTR){
-            fprintf(stderr, "Value of errno: %d\n", errno);
-            perror("Error printed by perror");
-            fprintf(stderr, "Error receiving msg: %s\n", strerror( errnum ));
-          }
-        } while ((ret < 0 ) && (errno == 4));
-        //fprintf(stderr,"msgrcv error return code --%d:$d--",ret,errno);
-        //printf("loop exited\n");
-        if (rbuf.present == 1)
-            fprintf(stderr,"%ld, %d of %d, %s, size=%d\n", rbuf.mtype, rbuf.index,rbuf.count,rbuf.longest_word, ret);
-        else
-            fprintf(stderr,"%ld, %d of %d, not found, size=%d\n", rbuf.mtype, rbuf.index,rbuf.count, ret);
+
    }
 
     exit(0);

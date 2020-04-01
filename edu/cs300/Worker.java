@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 class Worker extends Thread{
 
@@ -36,10 +37,10 @@ class Worker extends Thread{
         boolean found = this.textTrieTree.contains(prefix);
         
         if (!found){
-          System.out.println("Worker-"+this.id+" "+req.requestID+":"+ prefix+" ==> not found ");
+          //System.out.println("Worker-"+this.id+" "+req.requestID+":"+ prefix+" ==> not found ");
           resultsOutputArray.put(passageName+":"+prefix+" not found");
         } else{
-          System.out.println("Worker-"+this.id+" "+req.requestID+":"+ prefix+" ==> "+word);
+          //System.out.println("Worker-"+this.id+" "+req.requestID+":"+ prefix+" ==> "+word);
           resultsOutputArray.put(passageName+":"+textTrieTree.getLongestWord());
 
         }
@@ -58,11 +59,30 @@ class Worker extends Thread{
     sc.useDelimiter(" ");
     int i = 0;
     while (sc.hasNext()){
-      String word = sc.next().replaceAll("[^a-zA-Z]","").toLowerCase();
+      String word = sc.next();
+      word = word.replaceAll("\\p{Punct}","");
+      words.add(word);
+      //System.out.println(word);
+      if (Pattern.matches("\\p{Punct}+$",word))
+        System.out.println("Trailing punct");
       //System.out.println(word + i);
 
       i++;
-      words.add(word);
+//      if (!Pattern.matches("['-]",word) && !Pattern.matches("[^a-zA-Z]+$",word)){
+//        //System.out.println(word);
+//        if (Pattern.matches("[^a-zA-Z]+$", word)){
+//          System.out.println(word);
+//          word.replaceAll("[^a-zA-Z]+$","");
+//          words.add(word);
+//        }
+//        else{
+//        words.add(word);}
+//      }
+//      else {
+//        System.out.println(word);
+//      }
+
+
     }
 
     return words;

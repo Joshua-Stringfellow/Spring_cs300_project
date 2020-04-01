@@ -32,4 +32,4 @@ Git Repository for project files
 `./msgrcv`
 
 - Program to illistrate use of Java threading, Trie and BlockingArrayQUEUE
-`java edu.cs300.ParallelTextSearch con`
+`java edu.cs300.PassageProcessor con`
