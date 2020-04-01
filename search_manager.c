@@ -5,9 +5,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
+#include <signal.h>
+#include <semaphore.h>
 #include "longest_word_search.h"
 #include "queue_ids.h"
 
+sem_t mutex;
+char **statusArray;
 
 size_t                  /* O - Length of string */
 strlcpy(char       *dst,        /* O - Destination string */
@@ -37,6 +42,12 @@ strlcpy(char       *dst,        /* O - Destination string */
 
     return (srclen);
 }
+
+void catchSignal(int sigNum){
+    if (sigNum == SIGINT)
+        printf("Signal Received SIGINT\n");
+}
+
 response_buf getResponse(int msqid){
 // msgrcv to receive message
 response_buf rbuf;
@@ -55,24 +66,29 @@ response_buf rbuf;
         //fprintf(stderr,"msgrcv error return code --%d:$d--",ret,errno);
         //printf("loop exited\n");
         if (rbuf.present == 1)
-            fprintf(stderr,"%ld, %d of %d, %s, size=%d\n", rbuf.mtype, rbuf.index,rbuf.count,rbuf.longest_word, ret);
+            fprintf(stderr,"%d of %d, %s, size=%d\n", rbuf.index,rbuf.count,rbuf.longest_word, ret);
         else
-            fprintf(stderr,"%ld, %d of %d, not found, size=%d\n", rbuf.mtype, rbuf.index,rbuf.count, ret);
+            fprintf(stderr," %d of %d, not found, size=%d\n", rbuf.index,rbuf.count, ret);
         return rbuf;
 }
 int main(int argc, char**argv)
 {
+    //sem_init(&mutex, 0, 1);
+    int waitTime=atoi(argv[1]);
     int msqid =0;
     int msgflg = IPC_CREAT | 0666;
     key_t key;
     prefix_buf sbuf;
     size_t buf_length;
+    //if (signal(SIGINT, catchSignal) == SIG_ERR)
 
-    if (argc <= 1 || strlen(argv[1]) <2) {
-        printf("Error: please provide prefix of at least two characters for search\n");
-        printf("Usage: %s <prefix>\n",argv[0]);
-        exit(-1);
-    }
+//    if (argc <= 1 || strlen(argv[1]) <2) {
+//        printf("Error: please provide prefix of at least two characters for search\n");
+//        printf("Usage: %s <prefix>\n",argv[0]);
+//        exit(-1);
+//    }
+
+
 
     key = ftok(CRIMSON_ID,QUEUE_NUMBER);
     if ((msqid = msgget(key, msgflg)) < 0) {
@@ -85,7 +101,7 @@ int main(int argc, char**argv)
         fprintf(stderr, "msgget: msgget succeeded: msgqid = %d\n", msqid);
 
 
-   for (int i =1; argv[i] != NULL; i++ ){
+   for (int i =2; argv[i] != NULL; i++ ){
 
         // We'll send message type 1
         sbuf.mtype = 1;
@@ -111,22 +127,22 @@ int main(int argc, char**argv)
         while (rbuf.index < rbuf.count){
             rbuf = getResponse(msqid);
         }
-
-
+    fprintf(stderr,"\n"),
+    sleep(waitTime);
    }
-        sbuf.mtype = 1;
-        strlcpy(sbuf.prefix,"", WORD_LENGTH);
-        sbuf.id=0;
-           // Send a message.
-           if((msgsnd(msqid, &sbuf, buf_length, IPC_NOWAIT)) < 0) {
-               int errnum = errno;
-               fprintf(stderr,"%d, %ld, %s, %d\n", msqid, sbuf.mtype, sbuf.prefix, (int)buf_length);
-               perror("(msgsnd)");
-               fprintf(stderr, "Error sending msg: %s\n", strerror( errnum ));
-               exit(1);
-           }
-           else
-               fprintf(stderr,"Message(%d): \"%s\" Sent (%d bytes)\n\n", sbuf.id, sbuf.prefix,(int)buf_length);
+    sbuf.mtype = 1;
+    strlcpy(sbuf.prefix,"", WORD_LENGTH);
+    sbuf.id=0;
+       // Send a message.
+       if((msgsnd(msqid, &sbuf, buf_length, IPC_NOWAIT)) < 0) {
+           int errnum = errno;
+           fprintf(stderr,"%d, %ld, %s, %d\n", msqid, sbuf.mtype, sbuf.prefix, (int)buf_length);
+           perror("(msgsnd)");
+           fprintf(stderr, "Error sending msg: %s\n", strerror( errnum ));
+           exit(1);
+       }
+       else
+           fprintf(stderr,"Message(%d): \"%s\" Sent (%d bytes)\n\n", sbuf.id, sbuf.prefix,(int)buf_length);
     exit(0);
 }
 

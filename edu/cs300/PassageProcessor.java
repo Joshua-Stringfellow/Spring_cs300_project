@@ -40,17 +40,24 @@ public class PassageProcessor {
       }
 
       int counter = 0;
+       String[] responses = new String[passages.size()];
 
-      while (counter < treeCount) {
+       while (counter < treeCount) {
         try {
           String results = (String) resultsOutputArray.take();
           String passage = results.substring(0, results.indexOf(":"));
-          int index = counter;
-          new MessageJNI().writeLongestWordResponseMsg(req.requestID, prefix, index + 1, passage, results, treeCount, 1);
-          System.out.println("results:" + results);
+          //int index = counter;
+            responses[passages.indexOf(passage)] = results;
           counter++;
         } catch (InterruptedException e) {};
-      }
+       }
+       int ncounter = 1;
+       for (String s : responses){
+           String passage = s.substring(0, s.indexOf(":"));
+           new MessageJNI().writeLongestWordResponseMsg(req.requestID, prefix, ncounter, passage , s, treeCount, 1);
+           System.out.println("results:" + s);
+           ncounter++;
+       }
     }
   }
 
