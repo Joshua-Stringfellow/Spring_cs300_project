@@ -38,7 +38,7 @@ class Worker extends Thread{
         
         if (!found){
           //System.out.println("Worker-"+this.id+" "+req.requestID+":"+ prefix+" ==> not found ");
-          resultsOutputArray.put(passageName+":"+prefix+" not found");
+          resultsOutputArray.put(passageName+":"+" not found");
         } else{
           //System.out.println("Worker-"+this.id+" "+req.requestID+":"+ prefix+" ==> "+word);
           resultsOutputArray.put(passageName+":"+textTrieTree.getLongestWord());

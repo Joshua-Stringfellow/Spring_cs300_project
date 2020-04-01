@@ -11,8 +11,11 @@
 #include "longest_word_search.h"
 #include "queue_ids.h"
 
-sem_t mutex;
 char **statusArray;
+int gNumPassages = 0;
+int gNumPrefix = 0;
+sem_t gPrefix;
+sem_t gPassage;
 
 size_t                  /* O - Length of string */
 strlcpy(char       *dst,        /* O - Destination string */
@@ -44,8 +47,27 @@ strlcpy(char       *dst,        /* O - Destination string */
 }
 
 void catchSignal(int sigNum){
-    if (sigNum == SIGINT)
-        printf("Signal Received SIGINT\n");
+//    if (sigNum == SIGINT){
+
+      int sigintCurrentPrefixCount;
+      int sigintCurrentPassageCount;
+      sem_getvalue(&gPrefix, &sigintCurrentPrefixCount);
+      sem_getvalue(&gPassage, &sigintCurrentPassageCount);
+
+      for(int i = 0; i < gNumPrefix;i++){
+        if (sigintCurrentPrefixCount == 0){
+          fprintf(stdout,"%s - pending\n" ,statusArray[i]);
+        }
+        else if(i == sigintCurrentPrefixCount ){
+          fprintf(stdout,"%s - %d out of %d\n" ,statusArray[i],sigintCurrentPassageCount,gNumPassages);
+        }
+        else if(i  > sigintCurrentPrefixCount){
+          fprintf(stdout,"%s - pending\n" ,statusArray[i]);
+        }
+        else{
+          fprintf(stdout,"%s - done\n" ,statusArray[i]);
+        }
+      }
 }
 
 response_buf getResponse(int msqid){
@@ -66,30 +88,44 @@ response_buf rbuf;
         //fprintf(stderr,"msgrcv error return code --%d:$d--",ret,errno);
         //printf("loop exited\n");
         if (rbuf.present == 1)
-            fprintf(stderr,"%d of %d, %s, size=%d\n", rbuf.index,rbuf.count,rbuf.longest_word, ret);
+            fprintf(stdout,"%d of %d, %s=> %s, size=%d\n", rbuf.index,rbuf.count, rbuf.location_description, rbuf.longest_word, ret);
         else
-            fprintf(stderr," %d of %d, not found, size=%d\n", rbuf.index,rbuf.count, ret);
+            fprintf(stdout," %d of %d, not found, size=%d\n", rbuf.index,rbuf.count, ret);
         return rbuf;
 }
 int main(int argc, char**argv)
 {
-    //sem_init(&mutex, 0, 1);
+    int numValidPrefix = 0;
     int waitTime=atoi(argv[1]);
-    int msqid =0;
+    int msqid;
     int msgflg = IPC_CREAT | 0666;
     key_t key;
     prefix_buf sbuf;
     size_t buf_length;
-    //if (signal(SIGINT, catchSignal) == SIG_ERR)
-
-//    if (argc <= 1 || strlen(argv[1]) <2) {
-//        printf("Error: please provide prefix of at least two characters for search\n");
-//        printf("Usage: %s <prefix>\n",argv[0]);
-//        exit(-1);
-//    }
 
 
-
+    if (argc <= 1) {
+        printf("Error: please provide a wait time in number of seconds\n");
+        printf("Usage: %s <prefix>\n",argv[0]);
+        exit(-1);
+    }
+    for (int i =2; argv[i] != NULL; i++ ){
+        if(strlen(argv[i]) >2)
+            numValidPrefix++;
+    }
+    gNumPrefix=numValidPrefix;
+    printf("%d valid prefixes\n", numValidPrefix);
+   char *ValidPrefixs[numValidPrefix];
+   int j=0;
+   for (int i = 2; argv[i] != NULL; i++ ){
+        printf("%d", i);
+        if(strlen(argv[i]) >2){
+            ValidPrefixs[j] = argv[i];
+            j++;
+            }
+    }
+    statusArray = ValidPrefixs;
+    signal(SIGINT, catchSignal);
     key = ftok(CRIMSON_ID,QUEUE_NUMBER);
     if ((msqid = msgget(key, msgflg)) < 0) {
         int errnum = errno;
@@ -100,13 +136,14 @@ int main(int argc, char**argv)
     else
         fprintf(stderr, "msgget: msgget succeeded: msgqid = %d\n", msqid);
 
-
-   for (int i =2; argv[i] != NULL; i++ ){
+    sem_init(&gPrefix,0,0);
+   for (int i =0; i<numValidPrefix; i++ ){
+        sem_post(&gPrefix);
 
         // We'll send message type 1
         sbuf.mtype = 1;
-        strlcpy(sbuf.prefix,argv[i],WORD_LENGTH);
-        sbuf.id=i;
+        strlcpy(sbuf.prefix,ValidPrefixs[i],WORD_LENGTH);
+        sbuf.id=i+1;
         buf_length = strlen(sbuf.prefix) + sizeof(int)+1;//struct size without long int type
 
         // Send a message.
@@ -121,14 +158,16 @@ int main(int argc, char**argv)
             fprintf(stderr,"Message(%d): \"%s\" Sent (%d bytes)\n\n", sbuf.id, sbuf.prefix,(int)buf_length);
 
        // printf("Value of msqid= %d\n", msqid);
-        fprintf(stderr, "Report \"%s\"\n", argv[i]);
+        fprintf(stdout, "Report \"%s\"\n", ValidPrefixs[i]);
         response_buf rbuf = getResponse(msqid);
-
+        gNumPassages = rbuf.count;
         while (rbuf.index < rbuf.count){
+            sem_post(&gPassage);
             rbuf = getResponse(msqid);
         }
-    fprintf(stderr,"\n"),
-    sleep(waitTime);
+        sem_init(&gPrefix,0,0);
+        fprintf(stdout,"\n"),
+        sleep(waitTime);
    }
     sbuf.mtype = 1;
     strlcpy(sbuf.prefix,"", WORD_LENGTH);

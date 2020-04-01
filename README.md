@@ -2,6 +2,8 @@
 
 Git Repository for project files
 
+**Code can be compiled using the ```./test.sh``` script
+
 **All commands and code have been tested on cs426.ua.edu
 
 - Set up JAVA_HOME environment variable

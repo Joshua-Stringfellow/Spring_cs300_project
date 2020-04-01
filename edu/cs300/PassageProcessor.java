@@ -53,8 +53,13 @@ public class PassageProcessor {
        }
        int ncounter = 1;
        for (String s : responses){
-           String passage = s.substring(0, s.indexOf(":"));
-           new MessageJNI().writeLongestWordResponseMsg(req.requestID, prefix, ncounter, passage , s, treeCount, 1);
+           String[] tmp = s.split("[:]");
+           String passage = tmp[0];
+           String word=tmp[1];
+           if (word !=" not found")
+                new MessageJNI().writeLongestWordResponseMsg(req.requestID, prefix, ncounter, passage , word, treeCount, 1);
+           else
+               new MessageJNI().writeLongestWordResponseMsg(req.requestID, prefix, ncounter, passage , s, treeCount, 0);
            System.out.println("results:" + s);
            ncounter++;
        }
